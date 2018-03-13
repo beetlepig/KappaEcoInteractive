@@ -1,4 +1,8 @@
+import ddf.minim.*;
+
 import processing.serial.*;
+
+
 
 //import processing.io.*;
 
@@ -7,10 +11,13 @@ Logica log;
 
 Serial myPort;  // Create object from Serial class
 String val;      // Data received from the serial port
+Minim minim;
+AudioPlayer sounds[];
 
 void setup() {
 //  GPIO.pinMode(17, GPIO.INPUT);
 //  GPIO.attachInterrupt(17, this, "pinEvent", GPIO.RISING);
+
 
    try {
       myPort = new Serial(this, "/dev/ttyAMA0", 9600);
@@ -35,7 +42,21 @@ void setup() {
   size(900,600);
   rectMode(CENTER);
   textAlign(CENTER);
-  log = new Logica();
+    minim = new Minim(this);
+  sounds = new AudioPlayer[6];
+  sounds[0] = minim.loadFile("0_Inicio.mp3");
+  sounds[1] = minim.loadFile("1_Etapa.mp3");
+  sounds[2] = minim.loadFile("2_Etapa.mp3");
+  sounds[3] = minim.loadFile("3_Etapa_0.mp3");
+  sounds[4] = minim.loadFile("3_Etapa_1.mp3");
+  sounds[5] = minim.loadFile("4_Final.mp3");
+  log = new Logica(sounds);
+  /*¿
+  for(int i = 0 ; i < 6; i++) {
+    sounds[i].close();
+  }
+  */
+  sounds = null;
 }
 
 void draw() {
@@ -84,7 +105,13 @@ void serialEvent(Serial p) {
         }
         
         if(val == "plataformaIn") {
-          log.plataformaIn();
+             if(log.estadoPantalla == 0 && !log.hiloIniciado) {
+                  println("iniciado");
+                 log.plataformaIn();
+                 new Thread(log.conteoParaIniciar()).start();
+            } else {
+             log.plataformaIn();
+            }
         } else if (val == "plataformaOut") {
            log.plataformaOut();
         }

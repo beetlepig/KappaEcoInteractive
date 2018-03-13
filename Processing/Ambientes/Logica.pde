@@ -9,12 +9,52 @@ public class Logica {
  // boolean showPuntaje;
   short puntajeActual;
   
+  //variables para registro
+  String fechaInicio;
+  String fechaFinalizacion;
+  String puntosYfechaAcierto[][];
+  // variable de conteo de aciertos, reinicia con cada juego
+  short numeroAcierto;
+  //-------------------------------
+  
+  AudioPlayer sounds[];
+
   
   
-  public Logica(){
-    puntos = new int[4];
-    
+  
+  public Logica(AudioPlayer sonidos[]){
+    puntos = new int[4]; 
+    puntosYfechaAcierto = new String[6][2];
+    sounds = sonidos;
   }
+  
+  public void startSound(final int numero) {
+    if(estadoPantalla == 3) {
+      sounds[numero].play();
+      new Thread(new Runnable () {
+      public void run() {
+        while(sounds[numero].isPlaying()){
+          try {
+          Thread.sleep(100);
+          } catch (Exception e) {
+            e.printStackTrace();
+          }
+        }
+        sounds[numero+1].play();
+      }
+      }).start();
+
+    } else {
+    sounds[numero].play();
+    }
+  }
+  
+    
+  public void stopSound(int numero) {
+    sounds[numero].rewind();
+    sounds[numero].pause();
+  }
+  
   
   
   public void display() {
@@ -124,12 +164,17 @@ public class Logica {
     fill(255);
     textSize(24);
     text("puntaje", (width/15) * 3, (height/15) * 2);
+    text("Puntaje Total: " + (puntos[0] + puntos[1] + puntos[2]), (width/15) * 6, (height/15) * 4);
+    text("Puntaje primera etapa: " + puntos[0], (width/15) * 7, (height/15) * 6);
+    text("Puntaje segunda etapa: " + puntos[1], (width/15) * 7, (height/15) * 7);
+    text("Puntaje tercera etapa: " + puntos[2], (width/15) * 7, (height/15) * 8);
     }
   }
   
   public void interrupcionEvento(int puntosDesdePin) {
     if(estadoPantalla == 1 || estadoPantalla == 2 || estadoPantalla == 3) {
         if(!hiloIniciado && !showInfo && plataforma) {
+
           new Thread(contar(puntosDesdePin)).start(); 
         }  
     }
@@ -144,6 +189,9 @@ public Runnable contar(final int puntosAsumar) {
     println("deshabilitado");
     println("Puntos: " + puntosAsumar);
     puntajeActual = (short)puntosAsumar;
+    puntosYfechaAcierto[numeroAcierto][0] = String.valueOf(puntajeActual);
+    puntosYfechaAcierto[numeroAcierto][1] = java.time.LocalDateTime.now().toString();
+    numeroAcierto++;
     switch(estadoPantalla){
       case 1:
        puntos[0]+=puntosAsumar;
@@ -159,7 +207,23 @@ public Runnable contar(final int puntosAsumar) {
     try {
     Thread.sleep(2000);
     if(contadorAciertos==2){
-      cambiarEstadoTest(1);
+      switch (estadoPantalla) {
+        case 1:
+          cambiarEstadoTest(1, sounds[1].length());
+          startSound(1);
+        break;
+        
+        case 2:
+          cambiarEstadoTest(1, sounds[2].length());
+          startSound(2);
+        break;
+        
+        case 3:
+          cambiarEstadoTest(1, sounds[3].length() + sounds[4].length() + 2000);
+          startSound(3);
+        break;
+      }
+
       contadorAciertos=0;
     }
     hiloIniciado = false;
@@ -179,11 +243,13 @@ public Runnable conteoParaIniciar () {
   Runnable r = new Runnable() {
     int contador = 0;
     public void run(){
+         startSound(0);
       hiloIniciado = true;
       mostrarMensajeIntroduccion = true;
-      while (plataforma) {
-          if (contador == 10){
+      while (plataforma && estadoPantalla == 0) {
+          if (contador == (int)(((sounds[0].length() / 1000)+2) * 2)  ){
                   estadoPantalla += 1;
+                  fechaInicio = java.time.LocalDateTime.now().toString();
           }
         
         try {
@@ -191,10 +257,12 @@ public Runnable conteoParaIniciar () {
           contador++;
         } catch (Exception e) {
           
+          
         }
       }
       hiloIniciado = false;
       mostrarMensajeIntroduccion = false;
+      stopSound(0);
     }
     
   };
@@ -202,14 +270,62 @@ public Runnable conteoParaIniciar () {
 }
 
 public Runnable conteoParaReiniciar () {
-
+  startSound(5);
   Runnable r = new Runnable() {
 
     public void run(){
       hiloIniciado = true; 
         try {
-          Thread.sleep(5000);
+          Thread.sleep(sounds[5].length());
           estadoPantalla = 0;
+          numeroAcierto = 0;
+
+          
+          java.time.LocalDateTime ldt = java.time.LocalDateTime.now(); 
+          String iso8601 = ldt.toString();
+          fechaFinalizacion = iso8601;
+          iso8601 = iso8601.replace(".","_");
+          iso8601 = iso8601.replace(":","_");
+          String ubicacion = "data/"+ iso8601 +".json";
+          
+          JSONObject json = new JSONObject();
+          json.setString("FechaInicio", fechaInicio);
+          json.setString("FechaFinalizacion", fechaFinalizacion);
+          Thread.sleep(100);
+          json.setInt("PuntajePrimerAcierto", Integer.parseInt(puntosYfechaAcierto[0][0]));
+          json.setString("FechaPrimerAcierto", puntosYfechaAcierto[0][1]);
+          Thread.sleep(100);
+          json.setInt("PuntajeSegundoAcierto", Integer.parseInt(puntosYfechaAcierto[1][0]));
+          json.setString("FechaSegundoAcierto", puntosYfechaAcierto[1][1]);
+          Thread.sleep(100);
+          json.setInt("PuntajeTercerAcierto", Integer.parseInt(puntosYfechaAcierto[2][0]));
+          json.setString("FechaTercerAcierto", puntosYfechaAcierto[2][1]);
+          Thread.sleep(100);
+          json.setInt("PuntajeCuartoAcierto", Integer.parseInt(puntosYfechaAcierto[3][0]));
+          json.setString("FechaCuartoAcierto", puntosYfechaAcierto[3][1]);
+          Thread.sleep(100);
+          json.setInt("PuntajeQuintoAcierto", Integer.parseInt(puntosYfechaAcierto[4][0]));
+          json.setString("FechaQuintoAcierto", puntosYfechaAcierto[4][1]);
+          Thread.sleep(100);
+          json.setInt("PuntajeSextoAcierto", Integer.parseInt(puntosYfechaAcierto[5][0]));
+          json.setString("FechaSextoAcierto", puntosYfechaAcierto[5][1]);
+          Thread.sleep(100);
+          json.setInt("PuntajePrimeraEtapa", puntos[0]);
+          json.setInt("PuntajeSegundaEtapa", puntos[1]);
+          json.setInt("PuntajeTerceraEtapa", puntos[2]);
+          json.setInt("PuntajeTotal", (puntos[0] + puntos[1] + puntos[2]));
+
+           
+         saveJSONObject(json, ubicacion);
+          
+          for (int i = 0; i < sounds.length; i++){
+            stopSound(i);
+          }
+          for ( int i = 0; i < puntos.length; i++) {
+            puntos[i] = 0; 
+          }
+          
+
         } catch (Exception e) {
           
         }
@@ -219,14 +335,14 @@ public Runnable conteoParaReiniciar () {
   return r;
 }
 
-public void cambiarEstadoTest(final int numero) {
+public void cambiarEstadoTest(final int numero, final int timeSleep) {
   if(!showInfo) {
   new Thread(new Runnable(){
     public void run() {
       showInfo = true;
       println("Informacion");
       try {
-      Thread.sleep(4000);
+      Thread.sleep(timeSleep);
       showInfo = false;
       estadoPantalla += numero;
       if(estadoPantalla == 4) {
