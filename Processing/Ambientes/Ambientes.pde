@@ -85,7 +85,7 @@ void serialEvent(Serial p) {
           
           break;
           
-          case "obstaculoTree.":
+          case "obstaculoThree.":
           
           log.interrupcionEvento(40);
           
@@ -102,9 +102,8 @@ void serialEvent(Serial p) {
           log.interrupcionEvento(60);
           
           break;
-        }
-        
-        if(val == "plataformaIn") {
+          
+          case "plataformaIn.":
              if(log.estadoPantalla == 0 && !log.hiloIniciado) {
                   println("iniciado");
                  log.plataformaIn();
@@ -112,9 +111,14 @@ void serialEvent(Serial p) {
             } else {
              log.plataformaIn();
             }
-        } else if (val == "plataformaOut") {
-           log.plataformaOut();
+          break;
+          
+          case "plataformaOut.":
+                     log.plataformaOut();
+          
+          break;
         }
+        
       }
     } 
 } 
