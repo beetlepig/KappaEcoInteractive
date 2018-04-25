@@ -1,6 +1,11 @@
+#include "Ultrasonido.h"
+
 // int led_IROne = 8;
 // int led_IRTwo = 9;
 // int led_IRThree = 10;
+
+Ultrasonido sensorULTRA;
+
 int receptorOne = A0; 
 int receptorTwo = A1; 
 int receptorThree = A2; 
@@ -16,10 +21,10 @@ long sensorValuePresion = 0;
 
 bool paradoEnviado;
 
-unsigned long previousMillis = 0;        // will store last time LED was updated
+unsigned long previousMillis = 0;       
+unsigned long previousMillisTwo = 0;    
 
-// constants won't change:
-const long interval = 50;           // interval at which to blink (milliseconds)
+const long interval = 20;
 
 unsigned long currentMillis;
 
@@ -55,23 +60,34 @@ sensorValuePresion = analogRead(receptorPresion);
   if (currentMillis - previousMillis >= interval) {
     // Serial.println(sensorValueTwo);
      previousMillis = currentMillis;
-    if(sensorValueOne > 1000) {    
+     if(previousMillisTwo < 20) {
+      previousMillisTwo++;
+     }
+   if(previousMillisTwo == 20) {
+      
+    if(sensorValueOne > 970) {    
       Serial.print("obstaculoOne.");
+      previousMillisTwo = 0;
     }
-     if(sensorValueTwo > 1000) {    
+     if(sensorValueTwo > 995) {    
       Serial.print("obstaculoTwo.");
+      previousMillisTwo = 0;
     }
-         if(sensorValueThree > 1000) {    
+         if(sensorValueThree > 970) {    
       Serial.print("obstaculoThree.");
+      previousMillisTwo = 0;
     }  
 
     if(sensorValueFour > 1000){
      Serial.print("obstaculoFour.");
+     previousMillisTwo = 0;
     }
 
-     if(sensorValueFive > 1000){
+     if(sensorValueFive > 970){
      Serial.print("obstaculoFive.");
+     previousMillisTwo = 0;
     }
+   }
 
     
      if(sensorValuePresion < 500 && !paradoEnviado){
@@ -83,6 +99,9 @@ sensorValuePresion = analogRead(receptorPresion);
     }
 
     }
+
+    sensorULTRA.draw();
+ 
   }
   
 
