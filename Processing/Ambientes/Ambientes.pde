@@ -9,8 +9,8 @@ import processing.serial.*;
 
 Logica log;
 
-Serial myPort;  // Create object from Serial class
-String val;      // Data received from the serial port
+Serial myPort; 
+String val;    
 Minim minim;
 AudioPlayer sounds[];
 
@@ -24,12 +24,12 @@ void setup() {
   } catch(Exception e) {
     println(e);
               try {
-                String portName = Serial.list()[0];
+                String portName = Serial.list()[1];
                 myPort = new Serial(this, portName, 9600);
               } catch(Exception x) {
                   println(x);
                   try {
-                   String portName = Serial.list()[1];
+                   String portName = Serial.list()[0];
                    myPort = new Serial(this, portName, 9600);
                   } catch (Exception t){
                     println(t);
@@ -39,17 +39,20 @@ void setup() {
   }
 
 
-  size(900,600);
+ // size(1280, 720);
+  fullScreen();
   rectMode(CENTER);
+  imageMode(CENTER);
   textAlign(CENTER);
     minim = new Minim(this);
-  sounds = new AudioPlayer[6];
+  sounds = new AudioPlayer[7];
   sounds[0] = minim.loadFile("0_Inicio.mp3");
   sounds[1] = minim.loadFile("1_Etapa.mp3");
   sounds[2] = minim.loadFile("2_Etapa.mp3");
   sounds[3] = minim.loadFile("3_Etapa_0.mp3");
   sounds[4] = minim.loadFile("3_Etapa_1.mp3");
   sounds[5] = minim.loadFile("4_Final.mp3");
+  sounds[6] = minim.loadFile("coin.mp3");
   log = new Logica(sounds);
   /*¿
   for(int i = 0 ; i < 6; i++) {
@@ -62,14 +65,11 @@ void setup() {
 void draw() {
   background(150);
   log.display();
-  
-  
-
-
 }
 
-void serialEvent(Serial p) { 
-      if ( p.available() > 0) {  // If data is available,
+
+void serialEvent(Serial p) {
+      if ( p.available() > 0) { 
       val = p.readStringUntil('.');  
       if(val != null) {
       println(val);
@@ -81,33 +81,32 @@ void serialEvent(Serial p) {
           
           case "obstaculoTwo.":
           
-          log.interrupcionEvento(30);
+          log.interrupcionEvento(40);
           
           break;
           
           case "obstaculoThree.":
           
-          log.interrupcionEvento(40);
+          log.interrupcionEvento(50);
           
           break;
           
           case "obstaculoFour.":
           
-          log.interrupcionEvento(50);
+          log.interrupcionEvento(30);
           
           break;
           
           case "obstaculoFive.":
           
-          log.interrupcionEvento(60);
+          log.interrupcionEvento(10);
           
           break;
           
           case "plataformaIn.":
-             if(log.estadoPantalla == 0 && !log.hiloIniciado) {
-                  println("iniciado");
+             if(log.estadoPantalla == 0 && !log.hiloIniciado ) {
                  log.plataformaIn();
-                 new Thread(log.conteoParaIniciar()).start();
+
             } else {
              log.plataformaIn();
             }
@@ -121,7 +120,8 @@ void serialEvent(Serial p) {
         
       }
     } 
-} 
+}
+ 
 /*
 // this function will be called whenever GPIO is brought from LOW to HIGH
 void pinEvent(int pin) {
@@ -137,13 +137,13 @@ void pinEvent(int pin) {
 void keyPressed() {
   if (key == CODED) {
     if (keyCode == UP) {
-      log.interrupcionEvento(20);
+      log.interrupcionEvento(10);
     } else if (keyCode == RIGHT){
-      log.interrupcionEvento(40);
+      log.interrupcionEvento(20);
     } else if (keyCode == DOWN) {
-      log.interrupcionEvento(60);
+      log.interrupcionEvento(30);
     } else if (keyCode == LEFT) {
-      log.interrupcionEvento(80);
+      log.interrupcionEvento(40);
     }
     
     if (keyCode == SHIFT) {
