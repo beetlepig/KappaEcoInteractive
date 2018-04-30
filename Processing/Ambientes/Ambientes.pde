@@ -1,4 +1,4 @@
-import ddf.minim.*;
+import processing.sound.*;
 
 import processing.serial.*;
 
@@ -11,16 +11,21 @@ Logica log;
 
 Serial myPort; 
 String val;    
-Minim minim;
-AudioPlayer sounds[];
+
+
+
+
+
 
 void setup() {
 //  GPIO.pinMode(17, GPIO.INPUT);
 //  GPIO.attachInterrupt(17, this, "pinEvent", GPIO.RISING);
 
 
+
    try {
-      myPort = new Serial(this, "/dev/ttyAMA0", 9600);
+      // myPort = new Serial(this, "/dev/ttyAMA0", 9600);
+      myPort = new Serial(this, "/dev/ttyACM0", 9600);
   } catch(Exception e) {
     println(e);
               try {
@@ -40,32 +45,28 @@ void setup() {
 
 
  // size(1280, 720);
-  fullScreen();
+  fullScreen(P2D);
   rectMode(CENTER);
   imageMode(CENTER);
   textAlign(CENTER);
-    minim = new Minim(this);
-  sounds = new AudioPlayer[7];
-  sounds[0] = minim.loadFile("0_Inicio.mp3");
-  sounds[1] = minim.loadFile("1_Etapa.mp3");
-  sounds[2] = minim.loadFile("2_Etapa.mp3");
-  sounds[3] = minim.loadFile("3_Etapa_0.mp3");
-  sounds[4] = minim.loadFile("3_Etapa_1.mp3");
-  sounds[5] = minim.loadFile("4_Final.mp3");
-  sounds[6] = minim.loadFile("coin.mp3");
-  log = new Logica(sounds);
-  /*¿
-  for(int i = 0 ; i < 6; i++) {
-    sounds[i].close();
-  }
-  */
-  sounds = null;
+    
+
+
+
+  
+
+
+  log = new Logica(this);
+
+
 }
 
 void draw() {
   background(150);
   log.display();
 }
+
+
 
 
 void serialEvent(Serial p) {

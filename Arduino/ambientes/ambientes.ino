@@ -49,41 +49,43 @@ void setup() {
 
 void loop() { 
 currentMillis = millis();
-sensorValueOne = analogRead(receptorOne);
-sensorValueTwo = analogRead(receptorTwo);
-sensorValueThree = analogRead(receptorThree);
-sensorValueFour = analogRead(receptorFour);
-sensorValueFive = analogRead(receptorFive);
-sensorValuePresion = analogRead(receptorPresion);
+
 
 
   if (currentMillis - previousMillis >= interval) {
     // Serial.println(sensorValueTwo);
      previousMillis = currentMillis;
+     sensorValueOne = analogRead(receptorOne);
+     sensorValueTwo = analogRead(receptorTwo);
+     sensorValueThree = analogRead(receptorThree);
+     sensorValueFour = analogRead(receptorFour);
+     sensorValueFive = analogRead(receptorFive);
+     sensorValuePresion = analogRead(receptorPresion);
+     
      if(previousMillisTwo < 20) {
       previousMillisTwo++;
      }
    if(previousMillisTwo == 20) {
       
-    if(sensorValueOne > 970) {    
+    if(sensorValueOne > 975) {    
       Serial.print("obstaculoOne.");
       previousMillisTwo = 0;
     }
-     if(sensorValueTwo > 995) {    
+     if(sensorValueTwo > 1000) {    
       Serial.print("obstaculoTwo.");
       previousMillisTwo = 0;
     }
-         if(sensorValueThree > 970) {    
+         if(sensorValueThree > 975) {    
       Serial.print("obstaculoThree.");
       previousMillisTwo = 0;
     }  
 
-    if(sensorValueFour > 1000){
+    if(sensorValueFour > 1001){
      Serial.print("obstaculoFour.");
      previousMillisTwo = 0;
     }
 
-     if(sensorValueFive > 970){
+     if(sensorValueFive > 975){
      Serial.print("obstaculoFive.");
      previousMillisTwo = 0;
     }

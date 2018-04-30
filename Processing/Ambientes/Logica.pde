@@ -19,10 +19,13 @@ public class Logica {
   
   byte countOffsetPlataforma;
   Thread offsetPlataformaHilo;
+  short tiempoFuera;
+  boolean salido;
   //-------------------------------
   
   //sonidos - voces
-  AudioPlayer sounds[];
+  SoundFile sounds[];
+
   
   
   //Imagenes
@@ -38,15 +41,33 @@ public class Logica {
   AnimationArray pararseAnimation;
   AnimationArray pararseAnimationTwo;
   
+  //Papplet reference
   
   
-  public Logica(AudioPlayer sonidos[]){
+  
+  
+  public Logica(PApplet main){
     puntos = new int[4]; 
     puntosYfechaAcierto = new String[8][2];
     
     //sonidos
-    sounds = sonidos;
-    
+  sounds = new SoundFile[7];
+  sounds[0] = new SoundFile(main, "0_Inicio.mp3");
+  sounds[1] = new SoundFile(main, "1_Etapa.mp3");
+  sounds[2] = new SoundFile(main, "2_Etapa.mp3");
+  sounds[3] = new SoundFile(main, "3_Etapa_0.mp3");
+  sounds[4] = new SoundFile(main, "3_Etapa_1.mp3");
+  sounds[5] = new SoundFile(main, "4_Final.mp3");
+  sounds[6] = new SoundFile(main, "coin.mp3");
+
+ stopAllSounds();
+   
+ 
+
+
+  
+  
+  
     //animaciones imageArray
     pararseAnimation = new AnimationArray ("Arrow");
     pararseAnimationTwo = new AnimationArray ("ArrowTwo");
@@ -60,43 +81,63 @@ public class Logica {
     terceraEtapa = loadImage("Images/06.png");
     cuartaEtapa = loadImage ("Images/07.png");
     cuartaEtapaTwo = loadImage ("Images/08.png");
-    
     pantallaPuntaje =  loadImage("Images/09.png");
     
     offsetPlataformaHilo = new Thread (offsetPlataforma());
+    offsetPlataformaHilo.start();
     
   }
   
-  public void startSound(final int numero) {
-    if(estadoPantalla == 3 && numero != 6) {
-      sounds[numero].play();
+    public void startSound(final int numero) {
+      stopSound(numero);
+    if(estadoPantalla == 3 && numero == 3) {
+      sounds[numero].jump(0.2);
+      sounds[numero].rate(1.1);
       new Thread(new Runnable () {
+      float time = (sounds[numero].duration()+0.5)*10;
       public void run() {
-        while(sounds[numero].isPlaying()){
+        while(time > 0 && estadoPantalla == 3){
           try {
           Thread.sleep(100);
+          time--;
           } catch (Exception e) {
             e.printStackTrace();
           }
         }
-        sounds[numero+1].play();
+        sounds[4].jump(0.2);
+        sounds[4].rate(1.1);
       }
       }).start();
 
     } else {
-    sounds[numero].play();
+      if(numero == 6) {
+        sounds[numero].play();
+        sounds[numero].rate(1);
+      } else {
+    sounds[numero].jump(0.2);
+    sounds[numero].rate(1.1);
+      }
     }
   }
   
     
   public void stopSound(int numero) {
-    sounds[numero].rewind();
-    sounds[numero].pause();
+    sounds[numero].stop();
+    sounds[numero].cue(0);
+    sounds[numero].rate(1);
+ //   sounds[numero].pause();
   }
   
+  public void stopAllSounds(){
+   for(int i = sounds.length - 1; i >= 0; i--) {
+    stopSound(i);
+   }
+  }
   
-  
-  public void display() {
+
+ 
+ 
+ public void display() {
   fill(100,20,20);
   switch(estadoPantalla) {
     case 0:
@@ -267,7 +308,6 @@ public class Logica {
   public void interrupcionEvento(int puntosDesdePin) {
     if(estadoPantalla == 1 || estadoPantalla == 2 || estadoPantalla == 3 || estadoPantalla == 4) {
         if(!hiloIniciado && !showInfo && plataforma) {
-          stopSound(6);
           startSound(6);
           new Thread(contar(puntosDesdePin)).start(); 
         }  
@@ -306,21 +346,21 @@ public Runnable contar(final int puntosAsumar) {
     if(contadorAciertos>=2){
       switch (estadoPantalla) {
         case 1:
-          cambiarEstadoTest(1, sounds[1].length());
+          cambiarEstadoTest(1, (int)sounds[1].duration()*1000);
           startSound(1);
         break;
         
         case 2:
-          cambiarEstadoTest(1, sounds[2].length());
+          cambiarEstadoTest(1, (int)sounds[2].duration()*1000);
           startSound(2);
         break;
         
         case 3:
-          cambiarEstadoTest(1, sounds[3].length() + sounds[4].length() + 2000);
+          cambiarEstadoTest(1, (int)((sounds[3].duration()*1000) + (sounds[4].duration()*1000) + 500));
           startSound(3);
         break;
         case 4:
-          cambiarEstadoTest(1, sounds[5].length());
+          cambiarEstadoTest(1, (int)sounds[5].duration()*1000);
           startSound(5);
         break;
       }
@@ -348,13 +388,13 @@ public Runnable conteoParaIniciar () {
       hiloIniciado = true;
       mostrarMensajeIntroduccion = true;
       while (plataforma && estadoPantalla == 0) {
-          if (contador == (int)(((sounds[0].length() / 1000)+2) * 2)  ){
+          if (contador >= (int)((sounds[0].duration()+0.5f)*10)  ){
                   estadoPantalla += 1;
                   fechaInicio = java.time.LocalDateTime.now().toString();
           }
         
         try {
-          Thread.sleep(500);
+          Thread.sleep(100);
           contador++;
         } catch (Exception e) {
           
@@ -389,45 +429,76 @@ public Runnable conteoParaReiniciar () {
           iso8601 = iso8601.replace(":","_");
           String ubicacion = "data/"+ iso8601 +".json";
           
-          JSONObject json = new JSONObject();
+//          JSONObject json = new JSONObject();
+          JSONArray values = new JSONArray();
+          
+          JSONObject fechas = new JSONObject();
+          fechas.setString("FechaInicio", fechaInicio);
+          fechas.setString("FechaFinalizacion", fechaFinalizacion);
+          values.setJSONObject(0, fechas);
+          
+          JSONObject puntajes = new JSONObject();
+          puntajes.setInt("PuntajePrimeraEtapa", puntos[0]);
+          puntajes.setInt("PuntajeSegundaEtapa", puntos[1]);
+          puntajes.setInt("PuntajeTerceraEtapa", puntos[2]);
+          puntajes.setInt("PuntajeCuartaEtapa", puntos[3]);
+          puntajes.setInt("PuntajeTotal", (puntos[0] + puntos[1] + puntos[2]));
+          values.setJSONObject(1, puntajes);
+          
+            for (int i = 0; i < 8; i++) {
+
+               JSONObject etapa = new JSONObject();
+
+               etapa.setInt("AciertoNumero", i+1);
+               etapa.setInt("Puntaje", Integer.parseInt(puntosYfechaAcierto[i][0]));
+               etapa.setString("Fecha", puntosYfechaAcierto[i][1]);
+
+               values.setJSONObject(i+2, etapa);
+            }
+            
+           saveJSONArray(values, ubicacion);
+/*
           json.setString("FechaInicio", fechaInicio);
-          Thread.sleep(100);
+
           json.setString("FechaFinalizacion", fechaFinalizacion);
-          Thread.sleep(200);
+
           json.setInt("PuntajePrimerAcierto", Integer.parseInt(puntosYfechaAcierto[0][0]));
-          Thread.sleep(100);
+
           json.setString("FechaPrimerAcierto", puntosYfechaAcierto[0][1]);
-          Thread.sleep(200);
+
           json.setInt("PuntajeSegundoAcierto", Integer.parseInt(puntosYfechaAcierto[1][0]));
-          Thread.sleep(100);
+
           json.setString("FechaSegundoAcierto", puntosYfechaAcierto[1][1]);
-          Thread.sleep(200);
+
           json.setInt("PuntajeTercerAcierto", Integer.parseInt(puntosYfechaAcierto[2][0]));
           json.setString("FechaTercerAcierto", puntosYfechaAcierto[2][1]);
-          Thread.sleep(200);
+
           json.setInt("PuntajeCuartoAcierto", Integer.parseInt(puntosYfechaAcierto[3][0]));
           json.setString("FechaCuartoAcierto", puntosYfechaAcierto[3][1]);
-          Thread.sleep(200);
+
           json.setInt("PuntajeQuintoAcierto", Integer.parseInt(puntosYfechaAcierto[4][0]));
           json.setString("FechaQuintoAcierto", puntosYfechaAcierto[4][1]);
-          Thread.sleep(200);
+
           json.setInt("PuntajeSextoAcierto", Integer.parseInt(puntosYfechaAcierto[5][0]));
           json.setString("FechaSextoAcierto", puntosYfechaAcierto[5][1]);
-          Thread.sleep(200);
+
           json.setInt("PuntajeSeptimoAcierto", Integer.parseInt(puntosYfechaAcierto[6][0]));
-          json.setString("FechaSeptimoAcierto", puntosYfechaAcierto[7][1]);
-          Thread.sleep(200);
+          json.setString("FechaSeptimoAcierto", puntosYfechaAcierto[6][1]);
+          
+          json.setInt("PuntajeOctavoAcierto", Integer.parseInt(puntosYfechaAcierto[7][0]));
+          json.setString("FechaOctavoAcierto", puntosYfechaAcierto[7][1]);
+
           json.setInt("PuntajePrimeraEtapa", puntos[0]);
           json.setInt("PuntajeSegundaEtapa", puntos[1]);
           json.setInt("PuntajeTerceraEtapa", puntos[2]);
+          json.setInt("PuntajeCuartaEtapa", puntos[3]);
           json.setInt("PuntajeTotal", (puntos[0] + puntos[1] + puntos[2]));
-
+*/
            
-         saveJSONObject(json, ubicacion);
+     //    saveJSONObject(json, ubicacion);
           
-          for (int i = 0; i < sounds.length; i++){
-            stopSound(i);
-          }
+           stopAllSounds();
+           
           for ( int i = 0; i < puntos.length; i++) {
             puntos[i] = 0; 
           }
@@ -463,6 +534,7 @@ public void cambiarEstadoTest(final int numero, final int timeSleep) {
         new Thread(conteoParaReiniciar()).start();
       }
       println("Informacion end");
+      stopAllSounds();
       } catch (Exception e) {
         e.printStackTrace();
       }
@@ -488,28 +560,38 @@ public void conteoInterEtapa (final int time) {
 }
 
 public void plataformaIn () {
+   salido = false;
+  if(!plataforma) {
   plataforma = true;
+  new Thread(conteoParaIniciar()).start();
+  }
+
+
+  
+  /*
     if(offsetPlataformaHilo.isAlive()) {
   offsetPlataformaHilo.interrupt();
   } else {
       new Thread(conteoParaIniciar()).start();
   }
-
+  */
 
 
 
 }
 
 public void plataformaOut () {
-   
+    salido = true;
+   /*
    if(!offsetPlataformaHilo.isAlive()) {
    offsetPlataformaHilo = new Thread (offsetPlataforma());
    offsetPlataformaHilo.start();
    }
-   
+   */
 }
 
 private Runnable offsetPlataforma() {
+  /*
   return new Runnable(){
       public void run(){
         countOffsetPlataforma = 0;
@@ -521,6 +603,7 @@ private Runnable offsetPlataforma() {
           } catch(Exception e) {
             println(e);
             interrumpido = true;
+            countOffsetPlataforma = 10;
           }
         }
           if(!interrumpido) {
@@ -528,6 +611,33 @@ private Runnable offsetPlataforma() {
           }
       }
     };
+   */
+   
+     return new Runnable(){
+       
+       public void run(){
+         
+         while(true) {
+           try {
+             if(salido) {
+             tiempoFuera++; 
+              if(tiempoFuera > 10) {
+                 plataforma = false;
+               }
+             } else {
+               tiempoFuera = 0;
+
+             }
+           Thread.sleep(100);
+           } catch (Exception e) {
+            e.printStackTrace(); 
+           }
+           
+         }
+         
+       }
+       
+     };
 }
 
   
